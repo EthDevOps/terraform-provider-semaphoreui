@@ -1,13 +1,13 @@
 # Terraform SemaphoreUI Provider
 
-The [SemaphoreUI Provider](https://registry.terraform.io/providers/CruGlobal/semaphoreui/latest/docs) enables [Terraform](https://terraform.io) to manage [SemaphoreUI](https://semaphoreui.com/) resources.
+The [SemaphoreUI Provider](https://registry.terraform.io/providers/semaphoreui/semaphore/latest/docs) enables [Terraform](https://terraform.io) to manage [SemaphoreUI](https://semaphoreui.com/) resources.
 
 This project uses Conventional Commits in order to automatically manage releases as well as keeping the CHANGELOG.md updated. CHANGELOG follows the Keep a Changelog spec.
 
 ### Requirements
 This provider requires an installation of [SemaphoreUI](https://semaphoreui.com/).
 
-The provider is tested against the latest 3 versions of SemaphoreUI. See [Terraform Provider Acceptance Tests](https://github.com/CruGlobal/terraform-provider-semaphoreui/blob/main/.github/workflows/test.yml#L64) for a list of versions.
+The provider is tested against the latest 3 versions of SemaphoreUI. See [Terraform Provider Acceptance Tests](https://github.com/semaphoreui/terraform-provider-semaphore/blob/main/.github/workflows/test.yml#L64) for a list of versions.
 
 ### SemaphoreUI API Client
 The SemaphoreUI API client is generated from the Swagger (OpenAPI-2.0) [api-docs.yml](https://github.com/semaphoreui/semaphore/blob/develop/api-docs.yml) using [go-swagger](https://goswagger.io/go-swagger/).
