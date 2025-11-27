@@ -58,6 +58,7 @@ func convertProjectIntegrationModelToIntegrationRequest(integration ProjectInteg
 		ProjectID:  integration.ProjectID.ValueInt64(),
 		Name:       integration.Name.ValueString(),
 		TemplateID: integration.TemplateID.ValueInt64(),
+		Searchable: integration.Searchable.ValueBool(),
 	}
 }
 
@@ -67,6 +68,7 @@ func convertProjectIntegrationModelToIntegration(integration ProjectIntegrationM
 		ProjectID:  integration.ProjectID.ValueInt64(),
 		Name:       integration.Name.ValueString(),
 		TemplateID: integration.TemplateID.ValueInt64(),
+		Searchable: integration.Searchable.ValueBool(),
 	}
 }
 
@@ -76,6 +78,7 @@ func convertIntegrationResponseToProjectIntegrationModel(response *models.Integr
 		ProjectID:  types.Int64Value(response.ProjectID),
 		Name:       types.StringValue(response.Name),
 		TemplateID: types.Int64Value(response.TemplateID),
+		Searchable: types.BoolValue(response.Searchable),
 	}
 }
 

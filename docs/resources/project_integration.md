@@ -67,11 +67,14 @@ resource "semaphoreui_project_integration" "github_webhook" {
 
 ### Complete Example with Matchers and Extract Values
 
+When using matchers, set `searchable = true` so the integration can be routed via the project alias:
+
 ```terraform
 resource "semaphoreui_project_integration" "github_deploy" {
   project_id  = semaphoreui_project.project.id
   name        = "GitHub Deploy Webhook"
   template_id = semaphoreui_project_template.deploy.id
+  searchable  = true  # Enable to use matchers via project alias
 }
 
 # Only trigger on push events
@@ -118,7 +121,11 @@ resource "semaphoreui_project_integration_extract_value" "git_ref" {
 
 - `name` (String) The display name of the integration.
 - `project_id` (Number) <i style="color:red;font-weight: bold">(ForceNew)</i> The project ID that the integration belongs to.
-- `template_id` (Number) The template ID that this integration triggers.
+- `template_id` (Number) The template ID that this integration will trigger.
+
+### Optional
+
+- `searchable` (Boolean) When enabled, the integration uses matchers to route incoming webhooks via the project alias. When disabled, the integration has its own dedicated alias endpoint. Defaults to `false`.
 
 ### Read-Only
 

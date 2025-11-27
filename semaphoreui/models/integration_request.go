@@ -26,6 +26,9 @@ type IntegrationRequest struct {
 
 	// template id
 	TemplateID int64 `json:"template_id,omitempty"`
+
+	// searchable
+	Searchable bool `json:"searchable,omitempty"`
 }
 
 // Validate validates this integration request

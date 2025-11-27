@@ -40,4 +40,5 @@ data "semaphoreui_project_integration" "by_name" {
 
 ### Read-Only
 
-- `template_id` (Number) The template ID that this integration triggers.
+- `searchable` (Boolean) When enabled, the integration uses matchers to route incoming webhooks via the project alias. When disabled, the integration has its own dedicated alias endpoint.
+- `template_id` (Number) The template ID that this integration will trigger.

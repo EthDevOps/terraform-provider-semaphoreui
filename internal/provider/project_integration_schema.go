@@ -6,6 +6,7 @@ import (
 	schemaD "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	schemaR "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -19,6 +20,7 @@ type (
 		ProjectID  types.Int64  `tfsdk:"project_id"`
 		Name       types.String `tfsdk:"name"`
 		TemplateID types.Int64  `tfsdk:"template_id"`
+		Searchable types.Bool   `tfsdk:"searchable"`
 	}
 )
 
@@ -88,6 +90,19 @@ func ProjectIntegrationSchema() superschema.Schema {
 					Required: true,
 				},
 				DataSource: &schemaD.Int64Attribute{
+					Computed: true,
+				},
+			},
+			"searchable": superschema.BoolAttribute{
+				Common: &schemaR.BoolAttribute{
+					MarkdownDescription: "When enabled, the integration uses matchers to route incoming webhooks via the project alias. When disabled, the integration has its own dedicated alias endpoint.",
+				},
+				Resource: &schemaR.BoolAttribute{
+					Optional: true,
+					Computed: true,
+					Default:  booldefault.StaticBool(false),
+				},
+				DataSource: &schemaD.BoolAttribute{
 					Computed: true,
 				},
 			},
