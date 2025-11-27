@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	apiclient "terraform-provider-semaphoreui/semaphoreui/client"
@@ -54,12 +56,14 @@ func (r *projectIntegrationMatcherResource) Schema(ctx context.Context, _ resour
 
 func convertProjectIntegrationMatcherModelToMatcher(matcher ProjectIntegrationMatcherModel) *models.IntegrationMatcher {
 	return &models.IntegrationMatcher{
-		Name:         matcher.Name.ValueString(),
-		MatchType:    matcher.MatchType.ValueString(),
-		Method:       matcher.Method.ValueString(),
-		BodyDataType: matcher.BodyDataType.ValueString(),
-		Key:          matcher.Key.ValueString(),
-		Value:        matcher.Value.ValueString(),
+		ID:            matcher.ID.ValueInt64(),
+		IntegrationID: matcher.IntegrationID.ValueInt64(),
+		Name:          matcher.Name.ValueString(),
+		MatchType:     matcher.MatchType.ValueString(),
+		Method:        matcher.Method.ValueString(),
+		BodyDataType:  matcher.BodyDataType.ValueString(),
+		Key:           matcher.Key.ValueString(),
+		Value:         matcher.Value.ValueString(),
 	}
 }
 
@@ -187,6 +191,37 @@ func (r *projectIntegrationMatcherResource) Read(ctx context.Context, req resour
 	}
 }
 
+// updateMatcherResult is used to capture the result of the custom update operation
+type updateMatcherResult struct{}
+
+// updateMatcherOperation is a custom runtime.ClientOperation for updating matchers
+// This is needed because the API requires the 'id' field in the request body, but the
+// generated IntegrationMatcherRequest model doesn't include it.
+type updateMatcherOperation struct {
+	projectID     int64
+	integrationID int64
+	matcherID     int64
+	matcher       *models.IntegrationMatcher
+}
+
+func (o *updateMatcherOperation) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
+	if err := r.SetPathParam("project_id", fmt.Sprintf("%d", o.projectID)); err != nil {
+		return err
+	}
+	if err := r.SetPathParam("integration_id", fmt.Sprintf("%d", o.integrationID)); err != nil {
+		return err
+	}
+	if err := r.SetPathParam("matcher_id", fmt.Sprintf("%d", o.matcherID)); err != nil {
+		return err
+	}
+	if o.matcher != nil {
+		if err := r.SetBodyParam(o.matcher); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Update updates the resource and sets the updated Terraform state on success.
 func (r *projectIntegrationMatcherResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
@@ -196,12 +231,30 @@ func (r *projectIntegrationMatcherResource) Update(ctx context.Context, req reso
 		return
 	}
 
-	_, err := r.client.Integration.PutProjectProjectIDIntegrationsIntegrationIDMatchersMatcherID(&integration.PutProjectProjectIDIntegrationsIntegrationIDMatchersMatcherIDParams{
-		ProjectID:          plan.ProjectID.ValueInt64(),
-		IntegrationID:      plan.IntegrationID.ValueInt64(),
-		MatcherID:          plan.ID.ValueInt64(),
-		IntegrationMatcher: convertProjectIntegrationMatcherModelToMatcherRequest(plan),
-	}, nil)
+	// Use custom operation because the API requires 'id' in the request body
+	// but the generated IntegrationMatcherRequest model doesn't include it
+	op := &runtime.ClientOperation{
+		ID:                 "putProjectProjectIdIntegrationsIntegrationIdMatchersMatcherId",
+		Method:             "PUT",
+		PathPattern:        "/project/{project_id}/integrations/{integration_id}/matchers/{matcher_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params: &updateMatcherOperation{
+			projectID:     plan.ProjectID.ValueInt64(),
+			integrationID: plan.IntegrationID.ValueInt64(),
+			matcherID:     plan.ID.ValueInt64(),
+			matcher:       convertProjectIntegrationMatcherModelToMatcher(plan),
+		},
+		Reader: runtime.ClientResponseReaderFunc(func(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
+			if response.Code() == 204 {
+				return updateMatcherResult{}, nil
+			}
+			return nil, fmt.Errorf("unexpected response code: %d", response.Code())
+		}),
+	}
+
+	_, err := r.client.Transport.Submit(op)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Updating SemaphoreUI Integration Matcher",

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	apiclient "terraform-provider-semaphoreui/semaphoreui/client"
@@ -53,6 +55,15 @@ func (r *projectIntegrationResource) Schema(ctx context.Context, _ resource.Sche
 
 func convertProjectIntegrationModelToIntegrationRequest(integration ProjectIntegrationModel) *models.IntegrationRequest {
 	return &models.IntegrationRequest{
+		ProjectID:  integration.ProjectID.ValueInt64(),
+		Name:       integration.Name.ValueString(),
+		TemplateID: integration.TemplateID.ValueInt64(),
+	}
+}
+
+func convertProjectIntegrationModelToIntegration(integration ProjectIntegrationModel) *models.Integration {
+	return &models.Integration{
+		ID:         integration.ID.ValueInt64(),
 		ProjectID:  integration.ProjectID.ValueInt64(),
 		Name:       integration.Name.ValueString(),
 		TemplateID: integration.TemplateID.ValueInt64(),
@@ -155,6 +166,37 @@ func (r *projectIntegrationResource) Read(ctx context.Context, req resource.Read
 	}
 }
 
+// updateIntegrationResult is used to capture the result of the custom update operation
+type updateIntegrationResult struct{}
+
+func (r updateIntegrationResult) Code() int {
+	return 204
+}
+
+// updateIntegrationOperation is a custom runtime.ClientOperation for updating integrations
+// This is needed because the API requires the 'id' field in the request body, but the
+// generated IntegrationRequest model doesn't include it.
+type updateIntegrationOperation struct {
+	projectID     int64
+	integrationID int64
+	integration   *models.Integration
+}
+
+func (o *updateIntegrationOperation) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
+	if err := r.SetPathParam("project_id", fmt.Sprintf("%d", o.projectID)); err != nil {
+		return err
+	}
+	if err := r.SetPathParam("integration_id", fmt.Sprintf("%d", o.integrationID)); err != nil {
+		return err
+	}
+	if o.integration != nil {
+		if err := r.SetBodyParam(o.integration); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Update updates the resource and sets the updated Terraform state on success.
 func (r *projectIntegrationResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
@@ -164,11 +206,29 @@ func (r *projectIntegrationResource) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	_, err := r.client.Project.PutProjectProjectIDIntegrationsIntegrationID(&project.PutProjectProjectIDIntegrationsIntegrationIDParams{
-		ProjectID:     plan.ProjectID.ValueInt64(),
-		IntegrationID: plan.ID.ValueInt64(),
-		Integration:   convertProjectIntegrationModelToIntegrationRequest(plan),
-	}, nil)
+	// Use custom operation because the API requires 'id' in the request body
+	// but the generated IntegrationRequest model doesn't include it
+	op := &runtime.ClientOperation{
+		ID:                 "putProjectProjectIdIntegrationsIntegrationId",
+		Method:             "PUT",
+		PathPattern:        "/project/{project_id}/integrations/{integration_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params: &updateIntegrationOperation{
+			projectID:     plan.ProjectID.ValueInt64(),
+			integrationID: plan.ID.ValueInt64(),
+			integration:   convertProjectIntegrationModelToIntegration(plan),
+		},
+		Reader: runtime.ClientResponseReaderFunc(func(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
+			if response.Code() == 204 {
+				return updateIntegrationResult{}, nil
+			}
+			return nil, fmt.Errorf("unexpected response code: %d", response.Code())
+		}),
+	}
+
+	_, err := r.client.Transport.Submit(op)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Updating SemaphoreUI Project Integration",

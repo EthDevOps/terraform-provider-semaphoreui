@@ -1930,7 +1930,7 @@ paths:
           in: body
           required: true
           schema:
-            $ref: "#/definitions/IntegrationRequest"
+            $ref: "#/definitions/Integration"
       responses:
         204:
           description: Integration updated
