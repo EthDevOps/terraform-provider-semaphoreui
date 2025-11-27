@@ -31,5 +31,8 @@ website/vendor
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
 
+# Acceptance test script (contains sensitive config)
+scripts/run-acceptance-tests.sh
+
 # Keep windows files with windows line endings
 *.winfile eol=crlf

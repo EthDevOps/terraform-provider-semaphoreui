@@ -194,6 +194,9 @@ func (p *SemaphoreUIProvider) Configure(ctx context.Context, req provider.Config
 func (p *SemaphoreUIProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewProjectEnvironmentResource,
+		NewProjectIntegrationExtractValueResource,
+		NewProjectIntegrationMatcherResource,
+		NewProjectIntegrationResource,
 		NewProjectInventoryResource,
 		NewProjectKeyResource,
 		NewProjectRepositoryResource,
@@ -211,6 +214,9 @@ func (p *SemaphoreUIProvider) DataSources(ctx context.Context) []func() datasour
 		NewExternalUserDataSource,
 		NewProjectDataSource,
 		NewProjectEnvironmentDataSource,
+		NewProjectIntegrationDataSource,
+		NewProjectIntegrationExtractValueDataSource,
+		NewProjectIntegrationMatcherDataSource,
 		NewProjectInventoryDataSource,
 		NewProjectKeyDataSource,
 		NewProjectRepositoryDataSource,
