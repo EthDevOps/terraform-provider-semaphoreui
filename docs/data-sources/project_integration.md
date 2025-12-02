@@ -40,5 +40,8 @@ data "semaphoreui_project_integration" "by_name" {
 
 ### Read-Only
 
+- `auth_header` (String) The custom header name for authentication (e.g., `X-Webhook-Token`). Used with `token` authentication method.
+- `auth_method` (String) The authentication method for the integration webhook. Valid values are `token`, `github`, `bitbucket`, `hmac`, `basic`.
+- `auth_secret_id` (Number) The ID of the project key containing the secret used for authentication.
 - `searchable` (Boolean) When enabled, the integration uses matchers to route incoming webhooks via the project alias. When disabled, the integration has its own dedicated alias endpoint.
 - `template_id` (Number) The template ID that this integration will trigger.

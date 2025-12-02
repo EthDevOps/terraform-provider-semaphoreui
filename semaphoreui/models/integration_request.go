@@ -29,6 +29,16 @@ type IntegrationRequest struct {
 
 	// searchable
 	Searchable bool `json:"searchable,omitempty"`
+
+	// auth method
+	// Enum: ["token","github","bitbucket","hmac","basic"]
+	AuthMethod string `json:"auth_method,omitempty"`
+
+	// auth secret id
+	AuthSecretID int64 `json:"auth_secret_id,omitempty"`
+
+	// auth header
+	AuthHeader string `json:"auth_header,omitempty"`
 }
 
 // Validate validates this integration request

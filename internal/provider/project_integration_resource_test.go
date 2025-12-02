@@ -97,6 +97,50 @@ resource "semaphoreui_project_integration" "test" {
 `, testAccProjectIntegrationDependencyConfig(nameSuffix), name)
 }
 
+func testAccProjectIntegrationWithAuthDependencyConfig(nameSuffix string) string {
+	return fmt.Sprintf(`
+%[1]s
+
+resource "semaphoreui_project_key" "auth_secret" {
+  project_id = semaphoreui_project.test.id
+  name       = "AuthSecret-%[2]s"
+  login_password = {
+    login    = "webhook"
+    password = "secret-token-value"
+  }
+}
+`, testAccProjectIntegrationDependencyConfig(nameSuffix), nameSuffix)
+}
+
+func testAccProjectIntegrationWithTokenAuthConfig(nameSuffix string, name string) string {
+	return fmt.Sprintf(`
+%[1]s
+resource "semaphoreui_project_integration" "test" {
+  project_id     = semaphoreui_project.test.id
+  name           = "%[2]s"
+  template_id    = semaphoreui_project_template.test.id
+  searchable     = true
+  auth_method    = "token"
+  auth_secret_id = semaphoreui_project_key.auth_secret.id
+  auth_header    = "X-Webhook-Token"
+}
+`, testAccProjectIntegrationWithAuthDependencyConfig(nameSuffix), name)
+}
+
+func testAccProjectIntegrationWithGithubAuthConfig(nameSuffix string, name string) string {
+	return fmt.Sprintf(`
+%[1]s
+resource "semaphoreui_project_integration" "test" {
+  project_id     = semaphoreui_project.test.id
+  name           = "%[2]s"
+  template_id    = semaphoreui_project_template.test.id
+  searchable     = true
+  auth_method    = "github"
+  auth_secret_id = semaphoreui_project_key.auth_secret.id
+}
+`, testAccProjectIntegrationWithAuthDependencyConfig(nameSuffix), name)
+}
+
 func testAccProjectIntegrationImportID(n string) resource.ImportStateIdFunc {
 	return func(s *terraform.State) (string, error) {
 		rs, ok := s.RootModule().Resources[n]
@@ -146,6 +190,45 @@ func TestAcc_ProjectIntegrationResource_basic(t *testing.T) {
 			// Delete testing
 			{
 				Config: testAccProjectIntegrationDependencyConfig(nameSuffix),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccResourceNotExists("semaphoreui_project_integration.test"),
+				),
+			},
+		},
+	})
+}
+
+func TestAcc_ProjectIntegrationResource_withTokenAuth(t *testing.T) {
+	nameSuffix := acctest.RandString(8)
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with token auth
+			{
+				Config: testAccProjectIntegrationWithTokenAuthConfig(nameSuffix, fmt.Sprintf("Token Auth Integration %s", nameSuffix)),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccProjectIntegrationExists("semaphoreui_project_integration.test"),
+					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "name", fmt.Sprintf("Token Auth Integration %s", nameSuffix)),
+					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_method", "token"),
+					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_header", "X-Webhook-Token"),
+					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "searchable", "true"),
+					resource.TestCheckResourceAttrSet("semaphoreui_project_integration.test", "auth_secret_id"),
+				),
+			},
+			// Update to github auth
+			{
+				Config: testAccProjectIntegrationWithGithubAuthConfig(nameSuffix, fmt.Sprintf("GitHub Auth Integration %s", nameSuffix)),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccProjectIntegrationExists("semaphoreui_project_integration.test"),
+					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "name", fmt.Sprintf("GitHub Auth Integration %s", nameSuffix)),
+					resource.TestCheckResourceAttr("semaphoreui_project_integration.test", "auth_method", "github"),
+					resource.TestCheckResourceAttrSet("semaphoreui_project_integration.test", "auth_secret_id"),
+				),
+			},
+			// Delete testing
+			{
+				Config: testAccProjectIntegrationWithAuthDependencyConfig(nameSuffix),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccResourceNotExists("semaphoreui_project_integration.test"),
 				),

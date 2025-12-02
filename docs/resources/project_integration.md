@@ -65,6 +65,48 @@ resource "semaphoreui_project_integration" "github_webhook" {
 }
 ```
 
+### Example with Token Authentication
+
+To secure your webhook endpoint, you can configure authentication:
+
+```terraform
+# Create a key to store the webhook secret
+resource "semaphoreui_project_key" "webhook_secret" {
+  project_id = semaphoreui_project.project.id
+  name       = "Webhook Secret"
+  login_password = {
+    login    = "webhook"
+    password = "your-secret-token"
+  }
+}
+
+# Create an integration with token authentication
+resource "semaphoreui_project_integration" "secure_webhook" {
+  project_id     = semaphoreui_project.project.id
+  name           = "Secure Webhook"
+  template_id    = semaphoreui_project_template.deploy.id
+  searchable     = true
+  auth_method    = "token"
+  auth_secret_id = semaphoreui_project_key.webhook_secret.id
+  auth_header    = "X-Webhook-Token"
+}
+```
+
+### Example with GitHub Webhook Authentication
+
+For GitHub webhooks, use the `github` authentication method which validates the `X-Hub-Signature-256` header:
+
+```terraform
+resource "semaphoreui_project_integration" "github_webhook" {
+  project_id     = semaphoreui_project.project.id
+  name           = "GitHub Webhook"
+  template_id    = semaphoreui_project_template.deploy.id
+  searchable     = true
+  auth_method    = "github"
+  auth_secret_id = semaphoreui_project_key.webhook_secret.id
+}
+```
+
 ### Complete Example with Matchers and Extract Values
 
 When using matchers, set `searchable = true` so the integration can be routed via the project alias:
@@ -125,6 +167,9 @@ resource "semaphoreui_project_integration_extract_value" "git_ref" {
 
 ### Optional
 
+- `auth_header` (String) The custom header name for authentication (e.g., `X-Webhook-Token`). Used with `token` authentication method.
+- `auth_method` (String) The authentication method for the integration webhook. Valid values are `token`, `github`, `bitbucket`, `hmac`, `basic`. When not set, no authentication is required.
+- `auth_secret_id` (Number) The ID of the project key containing the secret used for authentication. Required when `auth_method` is set.
 - `searchable` (Boolean) When enabled, the integration uses matchers to route incoming webhooks via the project alias. When disabled, the integration has its own dedicated alias endpoint. Defaults to `false`.
 
 ### Read-Only

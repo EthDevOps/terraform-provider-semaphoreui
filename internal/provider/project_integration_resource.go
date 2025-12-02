@@ -55,31 +55,58 @@ func (r *projectIntegrationResource) Schema(ctx context.Context, _ resource.Sche
 
 func convertProjectIntegrationModelToIntegrationRequest(integration ProjectIntegrationModel) *models.IntegrationRequest {
 	return &models.IntegrationRequest{
-		ProjectID:  integration.ProjectID.ValueInt64(),
-		Name:       integration.Name.ValueString(),
-		TemplateID: integration.TemplateID.ValueInt64(),
-		Searchable: integration.Searchable.ValueBool(),
+		ProjectID:    integration.ProjectID.ValueInt64(),
+		Name:         integration.Name.ValueString(),
+		TemplateID:   integration.TemplateID.ValueInt64(),
+		Searchable:   integration.Searchable.ValueBool(),
+		AuthMethod:   integration.AuthMethod.ValueString(),
+		AuthSecretID: integration.AuthSecretID.ValueInt64(),
+		AuthHeader:   integration.AuthHeader.ValueString(),
 	}
 }
 
 func convertProjectIntegrationModelToIntegration(integration ProjectIntegrationModel) *models.Integration {
 	return &models.Integration{
-		ID:         integration.ID.ValueInt64(),
-		ProjectID:  integration.ProjectID.ValueInt64(),
-		Name:       integration.Name.ValueString(),
-		TemplateID: integration.TemplateID.ValueInt64(),
-		Searchable: integration.Searchable.ValueBool(),
+		ID:           integration.ID.ValueInt64(),
+		ProjectID:   integration.ProjectID.ValueInt64(),
+		Name:         integration.Name.ValueString(),
+		TemplateID:   integration.TemplateID.ValueInt64(),
+		Searchable:   integration.Searchable.ValueBool(),
+		AuthMethod:   integration.AuthMethod.ValueString(),
+		AuthSecretID: integration.AuthSecretID.ValueInt64(),
+		AuthHeader:   integration.AuthHeader.ValueString(),
 	}
 }
 
 func convertIntegrationResponseToProjectIntegrationModel(response *models.Integration) ProjectIntegrationModel {
-	return ProjectIntegrationModel{
+	model := ProjectIntegrationModel{
 		ID:         types.Int64Value(response.ID),
 		ProjectID:  types.Int64Value(response.ProjectID),
 		Name:       types.StringValue(response.Name),
 		TemplateID: types.Int64Value(response.TemplateID),
 		Searchable: types.BoolValue(response.Searchable),
 	}
+
+	// Handle optional auth fields - use null if not set
+	if response.AuthMethod != "" {
+		model.AuthMethod = types.StringValue(response.AuthMethod)
+	} else {
+		model.AuthMethod = types.StringNull()
+	}
+
+	if response.AuthSecretID != 0 {
+		model.AuthSecretID = types.Int64Value(response.AuthSecretID)
+	} else {
+		model.AuthSecretID = types.Int64Null()
+	}
+
+	if response.AuthHeader != "" {
+		model.AuthHeader = types.StringValue(response.AuthHeader)
+	} else {
+		model.AuthHeader = types.StringNull()
+	}
+
+	return model
 }
 
 // getIntegrationByID retrieves an integration by ID from the list of integrations.

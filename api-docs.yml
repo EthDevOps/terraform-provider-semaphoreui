@@ -607,6 +607,15 @@ definitions:
       template_id:
         type: integer
         minimum: 1
+      auth_method:
+        type: string
+        enum: [token, github, bitbucket, hmac, basic]
+      auth_secret_id:
+        type: integer
+      auth_header:
+        type: string
+      searchable:
+        type: boolean
       task_params:
         $ref: '#/definitions/TaskPrams'
 
@@ -620,6 +629,15 @@ definitions:
         type: integer
       template_id:
         type: integer
+      auth_method:
+        type: string
+        enum: [token, github, bitbucket, hmac, basic]
+      auth_secret_id:
+        type: integer
+      auth_header:
+        type: string
+      searchable:
+        type: boolean
       params:
         $ref: '#/definitions/TaskPrams'
 

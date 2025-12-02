@@ -16,11 +16,14 @@ import (
 
 type (
 	ProjectIntegrationModel struct {
-		ID         types.Int64  `tfsdk:"id"`
-		ProjectID  types.Int64  `tfsdk:"project_id"`
-		Name       types.String `tfsdk:"name"`
-		TemplateID types.Int64  `tfsdk:"template_id"`
-		Searchable types.Bool   `tfsdk:"searchable"`
+		ID           types.Int64  `tfsdk:"id"`
+		ProjectID    types.Int64  `tfsdk:"project_id"`
+		Name         types.String `tfsdk:"name"`
+		TemplateID   types.Int64  `tfsdk:"template_id"`
+		Searchable   types.Bool   `tfsdk:"searchable"`
+		AuthMethod   types.String `tfsdk:"auth_method"`
+		AuthSecretID types.Int64  `tfsdk:"auth_secret_id"`
+		AuthHeader   types.String `tfsdk:"auth_header"`
 	}
 )
 
@@ -103,6 +106,42 @@ func ProjectIntegrationSchema() superschema.Schema {
 					Default:  booldefault.StaticBool(false),
 				},
 				DataSource: &schemaD.BoolAttribute{
+					Computed: true,
+				},
+			},
+			"auth_method": superschema.StringAttribute{
+				Common: &schemaR.StringAttribute{
+					MarkdownDescription: "The authentication method for the integration webhook. Valid values are `token`, `github`, `bitbucket`, `hmac`, `basic`. When not set, no authentication is required.",
+				},
+				Resource: &schemaR.StringAttribute{
+					Optional: true,
+					Validators: []validator.String{
+						stringvalidator.OneOf("token", "github", "bitbucket", "hmac", "basic"),
+					},
+				},
+				DataSource: &schemaD.StringAttribute{
+					Computed: true,
+				},
+			},
+			"auth_secret_id": superschema.Int64Attribute{
+				Common: &schemaR.Int64Attribute{
+					MarkdownDescription: "The ID of the project key containing the secret used for authentication. Required when `auth_method` is set.",
+				},
+				Resource: &schemaR.Int64Attribute{
+					Optional: true,
+				},
+				DataSource: &schemaD.Int64Attribute{
+					Computed: true,
+				},
+			},
+			"auth_header": superschema.StringAttribute{
+				Common: &schemaR.StringAttribute{
+					MarkdownDescription: "The custom header name for authentication (e.g., `X-Webhook-Token`). Used with `token` authentication method.",
+				},
+				Resource: &schemaR.StringAttribute{
+					Optional: true,
+				},
+				DataSource: &schemaD.StringAttribute{
 					Computed: true,
 				},
 			},
